@@ -9,7 +9,7 @@ import {
 	Util,
 	IRetList,
 } from "mx-puppet-bridge";
-import * as Twit from "twit";
+import Twit from "twitter-lite";
 import * as bodyParser from "body-parser";
 import * as twitterWebhooks from "twitter-webhooks";
 import * as http from "http";
@@ -70,31 +70,17 @@ export class Twitter {
 		const client = new Twit({
 			consumer_key: Config().twitter.consumerKey,
 			consumer_secret: Config().twitter.consumerSecret,
-			access_token: data.accessToken,
+			access_token_key: data.accessToken,
 			access_token_secret: data.accessTokenSecret,
 		});
 		this.puppets[puppetId] = {
 			client,
 			data,
 			sentEventIds: [],
-		} as ITwitterPuppet;
+		};
 		const p = this.puppets[puppetId];
-		client.getAsync = async (...args) => {
-			return new Promise((resolve, reject) => {
-				client.get(...args, (err, d) => {
-					err ? reject(err) : resolve(d);
-				});
-			});
-		};
-		client.postAsync = async (...args) => {
-			return new Promise((resolve, reject) => {
-				client.post(...args, (err, d) => {
-					err ? reject(err) : resolve(d);
-				});
-			});
-		};
 		try {
-			const auth = await client.getAsync("account/verify_credentials");
+			const auth = await client.get("account/verify_credentials");
 			data.screenName = auth.screen_name;
 			data.id = auth.id_str;
 			data.name = auth.name;
@@ -270,7 +256,7 @@ Sep-1 12:39:43.696 [TwitterPuppet:Twitter] silly: { created_timestamp: '15673343
 				},
 			};
 		}
-		const reply = await p.client.postAsync("direct_messages/events/new", {
+		const reply = await p.client.post("direct_messages/events/new", {
 			event,
 		});
 		if (reply && reply.event && reply.event.id) {
@@ -293,7 +279,7 @@ Sep-1 12:39:43.696 [TwitterPuppet:Twitter] silly: { created_timestamp: '15673343
 		log.silly("Downloading image....");
 		const buffer = await Util.DownloadFile(data.url);
 		const fileSize = buffer.byteLength;
-		const mediaUpload = await p.client.postAsync("media/upload", {
+		const mediaUpload = await p.client.post("media/upload", {
 			command: "INIT",
 			total_bytes: fileSize,
 			media_type: data.info!.mimetype,
@@ -311,7 +297,7 @@ Sep-1 12:39:43.696 [TwitterPuppet:Twitter] silly: { created_timestamp: '15673343
 			if (sizeSent + FIVE_MB > fileSize) {
 				bufferSend = bufferSend.slice(0, fileSize - sizeSent);
 			}
-			await p.client.postAsync("media/upload", {
+			await p.client.post("media/upload", {
 				command: "APPEND",
 				media_id: mediaId,
 				media: bufferSend.toString("base64"),
@@ -321,7 +307,7 @@ Sep-1 12:39:43.696 [TwitterPuppet:Twitter] silly: { created_timestamp: '15673343
 			sizeSent += FIVE_MB;
 		}
 		log.silly("done uploading");
-		await p.client.postAsync("media/upload", {
+		await p.client.post("media/upload", {
 			command: "FINALIZE",
 			media_id: mediaId,
 		});
@@ -370,7 +356,7 @@ Sep-1 12:39:43.696 [TwitterPuppet:Twitter] silly: { created_timestamp: '15673343
 		}
 		log.verbose(`Got request to create user ${user.userId}`);
 		try {
-			const twitterUser = await p.client.getAsync("users/show", { user_id: user.userId });
+			const twitterUser = await p.client.get("users/show", { user_id: user.userId });
 			return {
 				userId: user.userId,
 				puppetId: user.puppetId,

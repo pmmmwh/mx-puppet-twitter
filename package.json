@@ -19,7 +19,7 @@
     "mx-puppet-bridge": "^0.1.4",
     "oauth": "^0.9.15",
     "tslint": "^5.20.1",
-    "twit": "^2.2.11",
+    "twitter-lite": "^1.1.0",
     "twitter-webhooks": "^0.3.3",
     "typescript": "^3.8.3"
   },
